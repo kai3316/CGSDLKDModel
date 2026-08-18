@@ -1,0 +1,12 @@
+# Navel-orange orchard dataset (Jiangxi Agricultural University)
+# 3015 images, 7:2:1 split -> train 2106 / val 603 / test 306. Single class.
+
+# <-- CHANGE THIS to the absolute path of your dataset root -->
+path: /path/to/navel_orange_dataset
+
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: navel-orange

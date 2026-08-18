@@ -1,108 +1,90 @@
 # CGSDLKDModel
 
-**Dual-Strategy Knowledge Distillation-Based Lightweight Detector for Navel Orange in Complex Scenarios**
+Code for the paper "Dual-Strategy Knowledge Distillation-Based Lightweight Detector for Navel Orange in Complex Scenarios" (Computers and Electronics in Agriculture, under review).
 
-Official implementation of **CGSDLKDModel**, a compact navel-orange detector co-designed through targeted architectural modules and a dual-strategy knowledge-distillation scheme for edge deployment in complex orchard environments.
+This code is a modification of Ultralytics YOLO11 (version 8.3.9). On top of the upstream code we added four modules and a knowledge-distillation trainer. The upstream project is copyright Ultralytics and distributed under AGPL-3.0; this repository keeps the same license. See MODULES.md for what was changed.
 
-> **Manuscript status:** under review at *Computers and Electronics in Agriculture* (Manuscript No. COMPAG-D-26-00963). The citation below will be finalized upon acceptance.
-
----
-
-## Overview
-
-Orchard fruit detection is challenged by cluttered foliage, severe occlusion, frequent fruit overlap, large scale variation, and limited on-device compute. This work derives a lightweight detector from YOLOv11n and recovers the accuracy lost during compression with a co-designed distillation scheme.
-
-Four architectural modules, each targeting a specific orchard difficulty, are introduced:
-
-| Module | Purpose |
-|---|---|
-| **Gr-CSP** | Grouped residual feature extraction for cluttered foliage |
-| **Dy-Sample** | Content-adaptive upsampling for overlapping fruit boundaries |
-| **Sf-Conv** | Shared-weight multi-scale fusion for extreme scale variation |
-| **Led-Head** | Instance-mask-augmented detection for dense clusters |
-
-A **dual-strategy distillation** then transfers knowledge from an improved YOLOv11m teacher (GSDL-YOLOv11m):
-
-- **Feature-level:** multi-layer channel-wise feature distillation (CWD) across backbone, neck, and head;
-- **Output-level:** confidence-weighted prediction distillation that stabilizes classification under illumination variation and dense overlap.
-
-## Main Results
-
-Relative to the original YOLOv11m baseline, CGSDLKDModel retains **90.8% mAP50** while reducing parameters by **97.1%** (0.578 M) and FLOPs by **97.9%**, at a model size of **1.4 MB**.
-
-| Metric | Value |
-|---|---|
-| mAP50 | 90.8% |
-| Precision / Recall | 93.0% / 85.3% |
-| mAP50–95 | 74.1% |
-| Parameters | 0.578 M |
-| Model size | 1.4 MB |
-| FPS (RTX 2080 Ti) | 78.4 |
-| FPS (Raspberry Pi 5) | 5.75 (173.8 ms) |
-| Power (Raspberry Pi 5, compute unit only) | 4.32 W |
-
-### Cross-dataset applicability
-
-CGSDLKDModel is retrained from scratch on each public benchmark (the experiments test architectural applicability across crops, not zero-shot generalization):
-
-| Dataset | mAP50 |
-|---|---|
-| MinneApple | 83.2% |
-| Mango dataset-1 | 98.2% |
-
-## Repository Structure
+## Directory layout
 
 ```
 CGSDLKDModel/
-├── README.md
-├── models/            # module definitions (Gr-CSP, Dy-Sample, Sf-Conv, Led-Head)  [to be uploaded]
-├── distillation/      # dual-strategy distillation losses                          [to be uploaded]
-├── configs/           # model & training configuration files                       [to be uploaded]
-├── tools/             # train / eval / export scripts                              [to be uploaded]
-├── weights/           # trained weights (released separately)                      [to be uploaded]
-└── data/              # dataset preparation scripts                                [to be uploaded]
+├── ultralytics/                        modified ultralytics package
+│   ├── nn/extra_modules/block.py       Gr-CSP, Dy-Sample, Sf-Conv
+│   ├── nn/extra_modules/head.py        Led-Head
+│   ├── nn/tasks.py                     model parser
+│   ├── models/yolo/detect/distill.py   distillation trainer
+│   └── utils/distill_loss.py           distillation losses
+├── configs/                            model yaml configs
+├── weights/                            trained checkpoints
+├── datasets/                           dataset config template
+├── train.py                            train teacher or student
+├── distill.py                          distillation training
+├── val.py                              validation
+├── detect.py                           inference
+├── MODULES.md
+├── requirements.txt
+└── LICENSE
 ```
 
-> Code, configuration files, and trained weights are being prepared for release and will be uploaded shortly.
+## Module names in the paper vs in the code
 
-## Requirements
+| Paper name | Code class | File |
+|------------|------------|------|
+| Gr-CSP | RGCSPELAN | ultralytics/nn/extra_modules/block.py |
+| Dy-Sample | DySample | ultralytics/nn/extra_modules/block.py |
+| Sf-Conv | FeaturePyramidSharedConv | ultralytics/nn/extra_modules/block.py |
+| Led-Head | Detect_Efficient | ultralytics/nn/extra_modules/head.py |
 
-- Python 3.10+
-- PyTorch 2.2
-- NVIDIA GPU with 12 GB+ VRAM for training (tested on an RTX 2080 Ti)
+The distillation losses (CWDLoss, LogicalLoss/OutputLoss) are in ultralytics/utils/distill_loss.py. The training loop is DetectionDistiller in ultralytics/models/yolo/detect/distill.py.
 
-## Training
+## Install
 
-All experiments follow a fixed protocol (single training run):
-
-- Input resolution: 640×640
-- Optimizer: SGD, learning rate 0.01
-- Batch size: 16
-- Epochs: 200
-- Workers: 8
-- Random initialization
-
-## Edge Deployment
-
-Benchmarked on a Raspberry Pi 5 (Broadcom BCM2712, quad-core Cortex-A76, 2.4 GHz, 8 GB RAM) with FP32 inference at 640×640, batch size 1, 4 CPU threads (averaged over 300 runs). The reported power consumption refers to the Raspberry Pi computing unit only and excludes camera, display, wireless, and power-conversion losses.
-
-The 5.75 FPS throughput supports fixed or low-frequency field monitoring; higher frame rates for mobile operation can be pursued via INT8 quantization or dedicated inference accelerators.
-
-## Citation
-
-If you use this work, please cite the paper (final citation to be completed upon acceptance):
-
-```bibtex
-@article{hua2025cgsdlkd,
-  title   = {Dual-Strategy Knowledge Distillation-Based Lightweight Detector
-             for Navel Orange in Complex Scenarios},
-  author  = {Jing Hua and Jize Deng and Binfeng Tang and Jingqiu Zhang and Hua Yin and Kai Su},
-  journal = {Computers and Electronics in Agriculture},
-  note    = {under review},
-  year    = {2026}
-}
 ```
+conda create -n cgsdl python=3.10 -y
+conda activate cgsdl
+pip install torch==2.2.0 torchvision==0.17.0 --index-url https://download.pytorch.org/whl/cu122
+pip install -r requirements.txt
+pip install -e .
+```
+
+The four modules are pure PyTorch and need no CUDA compilation. The repository also contains some optional third-party operators (Mamba, DCNv3/DCNv4, and others) from the upstream fork; they are imported with try/except and are not needed to run this model.
+
+## Dataset
+
+The navel orange dataset has 3015 images, one class, split 7:2:1 (2106 train / 603 val / 306 test). Put the images and labels in YOLO format and set the path in datasets/navel_orange.yaml:
+
+```
+path: /path/to/navel_orange_dataset
+train: images/train
+val: images/val
+test: images/test
+names:
+  0: navel-orange
+```
+
+The image and label files are not included in this release. See datasets/README.md.
+
+## Reproduce
+
+1. Train the teacher (GSDL-YOLOv11m). Set MODEL = "configs/yolo11-techer.yaml" in train.py, then run `python train.py`.
+
+2. Train the student. Set MODEL = "configs/yolo11-student.yaml" (2.132M) or "configs/yolo11-studentCCC.yaml" (0.578M), then run `python train.py`.
+
+3. Distill. Check the paths in distill.py, then run `python distill.py`. This produces the final CGSDLKDModel.
+
+4. Evaluate and detect with `python val.py` and `python detect.py`.
+
+## Weights
+
+| File | Model | Params |
+|------|-------|--------|
+| teacher_gsdl_yolo11m_best.pt | GSDL-YOLOv11m | 17.185M |
+| student_gsdl_yolo11n_best.pt | GSDL-YOLOv11n | 2.132M |
+| student_compressed_cgsdl_yolo11n_best.pt | CGSDL-YOLOv11n | 0.578M |
+| distilled_cgsdlkdmodel_best.pt | CGSDLKDModel | 0.578M |
+
+See weights/README.md for the mapping to the paper tables.
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+This code is based on the Ultralytics YOLO11 project (https://github.com/ultralytics/ultralytics), and is released under the same AGPL-3.0 license.

@@ -1,27 +1,37 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
 *.egg-info/
 .eggs/
 build/
 dist/
-.venv/
-venv/
-env/
+*.so
+*.o
+*.a
 
-# Logs
-*.log
-runs/
-
-# IDE / OS
-.vscode/
-.idea/
+# macOS
 .DS_Store
+._*
 
-# Data & weights (large / proprietary)
-data/raw/
-*.pth
+# IDE
+.idea/
+.vscode/
+
+# Training outputs / artifacts
+runs/
+result/
+*.csv
+*.png
+*.jpg
+*.log
+
+# Weights: track only the release weights in weights/; ignore stray .pt elsewhere
 *.pt
-*.onnx
-*.engine
+!weights/*.pt
+
+# Data (not redistributed)
+datasets/images/
+datasets/labels/
+
+# Vendored optional CUDA sources (not required for CGSDLKDModel) — keep if you need them
+# ultralytics/nn/extra_modules/cutlass/
