@@ -17,6 +17,9 @@ dist/
 .idea/
 .vscode/
 
+# Local agent instructions (not for publication)
+CLAUDE.md
+
 # Training outputs / artifacts
 runs/
 result/
